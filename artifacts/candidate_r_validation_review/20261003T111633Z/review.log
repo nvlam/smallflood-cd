@@ -1,0 +1,36 @@
+SOURCE smallflood_cd: /data/fit.lamnv/smallflood_cd/src/smallflood_cd/__init__.py
+SOURCE smallflood_cd.engine.validator: /data/fit.lamnv/smallflood_cd/src/smallflood_cd/engine/validator.py
+SOURCE smallflood_cd.engine.trainer: /data/fit.lamnv/smallflood_cd/src/smallflood_cd/engine/trainer.py
+SOURCE smallflood_cd.engine.experiment: /data/fit.lamnv/smallflood_cd/src/smallflood_cd/engine/experiment.py
+SOURCE smallflood_cd.models.registry: /data/fit.lamnv/smallflood_cd/src/smallflood_cd/models/registry.py
+SOURCE IMPORT CHECK PASSED
+OUTPUT: artifacts/candidate_r_validation_review/20261003T111633Z/results
+A_control/best_composite: 100/596 batches
+A_control/best_composite: 200/596 batches
+A_control/best_composite: 300/596 batches
+A_control/best_composite: 400/596 batches
+A_control/best_composite: 500/596 batches
+{"run": "A_control", "checkpoint": "best_composite.ckpt", "global_pixel": {"tp": 2691430, "fp": 485780, "fn": 490859, "tn": 292094286, "valid_pixels": 295762355, "precision": 0.8471048498525435, "recall": 0.8457528527421614, "f1": 0.8464283114125813, "iou": 0.7337457392431822, "accuracy": 0.9966978928065405, "gt_positive_fraction": 0.010759614758950644, "pred_positive_fraction": 0.010742442188087122, "false_positive_rate": 0.0016603318422930425}, "event_macro": {"precision": 0.8118124987504531, "recall": 0.8513272867468705, "f1": 0.8284351358718937, "iou": 0.7121637683565579, "accuracy": 0.9957724626644141}}
+CHECKPOINT VERIFIED: A_control/best_composite.ckpt
+A_control/last: 100/596 batches
+A_control/last: 200/596 batches
+A_control/last: 300/596 batches
+A_control/last: 400/596 batches
+A_control/last: 500/596 batches
+{"run": "A_control", "checkpoint": "last.ckpt", "global_pixel": {"tp": 2555640, "fp": 370862, "fn": 626649, "tn": 292209204, "valid_pixels": 295762355, "precision": 0.873274646660074, "recall": 0.8030823096205278, "f1": 0.8367089330769378, "iou": 0.7192601721683092, "accuracy": 0.9966273226354314, "gt_positive_fraction": 0.010759614758950644, "pred_positive_fraction": 0.009894775148108352, "false_positive_rate": 0.0012675573051514726}, "event_macro": {"precision": 0.8371467230250533, "recall": 0.8237149566043772, "f1": 0.8256693239023986, "iou": 0.7094110704805247, "accuracy": 0.9961135919451225}}
+CHECKPOINT VERIFIED: A_control/last.ckpt
+R/best_composite: 100/596 batches
+R/best_composite: 200/596 batches
+R/best_composite: 300/596 batches
+R/best_composite: 400/596 batches
+R/best_composite: 500/596 batches
+{"run": "R", "checkpoint": "best_composite.ckpt", "global_pixel": {"tp": 2625613, "fp": 1194324, "fn": 556676, "tn": 291385742, "valid_pixels": 295762355, "precision": 0.6873445818609051, "recall": 0.8250705702719018, "f1": 0.7499366629983094, "iou": 0.5999189327454815, "accuracy": 0.99407970632368, "gt_positive_fraction": 0.010759614758950644, "pred_positive_fraction": 0.012915561887516077, "false_positive_rate": 0.0040820415974613935}, "event_macro": {"precision": 0.6062835474507385, "recall": 0.8247341859958531, "f1": 0.6670670929241197, "iou": 0.5400432705832721, "accuracy": 0.9911805928165424}}
+CHECKPOINT VERIFIED: R/best_composite.ckpt
+R/last: 100/596 batches
+R/last: 200/596 batches
+R/last: 300/596 batches
+R/last: 400/596 batches
+R/last: 500/596 batches
+{"run": "R", "checkpoint": "last.ckpt", "global_pixel": {"tp": 2488746, "fp": 3929422, "fn": 693543, "tn": 288650644, "valid_pixels": 295762355, "precision": 0.3877657923569467, "recall": 0.782061591514787, "f1": 0.518464068950051, "iou": 0.34995038465426953, "accuracy": 0.9843693258393212, "gt_positive_fraction": 0.010759614758950644, "pred_positive_fraction": 0.021700422286669987, "false_positive_rate": 0.013430245107675928}, "event_macro": {"precision": 0.6094849950674183, "recall": 0.8007401266167999, "f1": 0.5939978911119922, "iou": 0.5125324621295164, "accuracy": 0.9719944747953297}}
+CHECKPOINT VERIFIED: R/last.ckpt
+CANDIDATE R VALIDATION REVIEW COMPLETE: artifacts/candidate_r_validation_review/20261003T111633Z/results

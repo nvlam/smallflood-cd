@@ -1,0 +1,36 @@
+{
+  "evaluations": 4,
+  "test_used": false,
+  "training_performed": false,
+  "pixel_counts_match_training": true,
+  "global_and_event_metrics_match_training": true,
+  "gt_denominators_identical": true,
+  "gt_denominators_by_event": {
+    "20161011_Lumberton": {
+      "patches": 763,
+      "component_target": 897,
+      "small_target_clipped": 110,
+      "small_target_interior": 0,
+      "boundary_target": 87093,
+      "boundary_valid_pixels": 47348645
+    },
+    "20220302_Coraki_Australia": {
+      "patches": 479,
+      "component_target": 984,
+      "small_target_clipped": 218,
+      "small_target_interior": 42,
+      "boundary_target": 184098,
+      "boundary_valid_pixels": 26115289
+    },
+    "20230805_Hebei": {
+      "patches": 3525,
+      "component_target": 4864,
+      "small_target_clipped": 1223,
+      "small_target_interior": 328,
+      "boundary_target": 630041,
+      "boundary_valid_pixels": 208144454
+    }
+  },
+  "pilot_root": "runs/candidate_r_v1/20261002T150633Z",
+  "script_sha256": "309dba4c576e6073767cee6d73f6f5fb3dc54eccbba555450c0a92574f527484"
+}

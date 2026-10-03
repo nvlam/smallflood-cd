@@ -1,0 +1,83 @@
+{
+  "run_directory": "runs/candidate_r_v1/20261002T150633Z/A_control",
+  "checkpoint": "runs/candidate_r_v1/20261002T150633Z/A_control/checkpoints/last.ckpt",
+  "checkpoint_sha256": "43e0ba3ab3018dd5c8d1f18b583fcbe70ea70f8cf683efa7de36b79107c9e19b",
+  "checkpoint_epoch_1based": 15,
+  "split": "validation",
+  "test_used": false,
+  "training_performed": false,
+  "threshold": 0.5,
+  "global_pixel": {
+    "tp": 2555640,
+    "fp": 370862,
+    "fn": 626649,
+    "tn": 292209204,
+    "valid_pixels": 295762355,
+    "precision": 0.873274646660074,
+    "recall": 0.8030823096205278,
+    "f1": 0.8367089330769378,
+    "iou": 0.7192601721683092,
+    "accuracy": 0.9966273226354314,
+    "gt_positive_fraction": 0.010759614758950644,
+    "pred_positive_fraction": 0.009894775148108352,
+    "false_positive_rate": 0.0012675573051514726
+  },
+  "event_macro": {
+    "precision": 0.8371467230250533,
+    "recall": 0.8237149566043772,
+    "f1": 0.8256693239023986,
+    "iou": 0.7094110704805247,
+    "accuracy": 0.9961135919451225
+  },
+  "event_macro_defined_counts": {
+    "precision": 3,
+    "recall": 3,
+    "f1": 3,
+    "iou": 3,
+    "accuracy": 3
+  },
+  "by_patch_category": {
+    "positive": {
+      "tp": 2555640,
+      "fp": 343544,
+      "fn": 626649,
+      "tn": 60204783,
+      "valid_pixels": 63730616,
+      "precision": 0.8815032091788586,
+      "recall": 0.8030823096205278,
+      "f1": 0.8404674328078082,
+      "iou": 0.7248329685495598,
+      "accuracy": 0.9847766574231763,
+      "gt_positive_fraction": 0.049933441722891866,
+      "pred_positive_fraction": 0.04549122826617587,
+      "false_positive_rate": 0.0056738809645392844
+    },
+    "negative": {
+      "tp": 0,
+      "fp": 27318,
+      "fn": 0,
+      "tn": 232004421,
+      "valid_pixels": 232031739,
+      "precision": 0.0,
+      "recall": null,
+      "f1": 0.0,
+      "iou": 0.0,
+      "accuracy": 0.999882266106707,
+      "gt_positive_fraction": 0.0,
+      "pred_positive_fraction": 0.00011773389329293438,
+      "false_positive_rate": 0.00011773389329293438
+    }
+  },
+  "negative_patches": 3775,
+  "negative_patches_with_any_false_positive": 144,
+  "negative_patch_alarm_rate": 0.03814569536423841,
+  "all_invalid_patches": 0,
+  "validation_patches": 4767,
+  "manifest_sha256": "51eba373aef67e05b768bfc3c402d15c9fb9c8417c7026c6079a8fc0bea9b3ae",
+  "torch": "2.5.1+cu124",
+  "device": "cuda",
+  "script_sha256": "f4c2c5f11a5b0f482c7ae43cc5938b98b2b14d89fe54d8b2ac8ea8bc8ccafe69",
+  "undefined_metric_policy": "zero denominator = null; excluded from event macro, counts reported",
+  "image_selection": "first two positive and negative patches per event sorted by patch_id; not representative sampling",
+  "scope": "valid pixels of prepared patches; no scene reconstruction or component/boundary evaluation"
+}

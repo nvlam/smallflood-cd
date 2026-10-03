@@ -6,7 +6,9 @@ __pycache__/
 data/raw/
 data/interim/
 data/processed/
-artifacts/
+artifacts/*
+!artifacts/candidate_r_validation_review/
+artifacts/candidate_r_validation_review/**/images/
 runs/
 *.engine
 *.onnx

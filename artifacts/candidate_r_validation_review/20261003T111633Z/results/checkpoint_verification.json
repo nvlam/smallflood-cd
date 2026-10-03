@@ -1,0 +1,34 @@
+[
+  {
+    "cell": "A_control",
+    "checkpoint": "best_composite.ckpt",
+    "epoch_0based": 11,
+    "checkpoint_sha256": "ccf0df21a0518c79f37501913e33c683c844809bbfdf0a960c44b76b20254fe1",
+    "pixel_counts_match_training": true,
+    "global_and_event_metrics_match_training": true
+  },
+  {
+    "cell": "A_control",
+    "checkpoint": "last.ckpt",
+    "epoch_0based": 14,
+    "checkpoint_sha256": "43e0ba3ab3018dd5c8d1f18b583fcbe70ea70f8cf683efa7de36b79107c9e19b",
+    "pixel_counts_match_training": true,
+    "global_and_event_metrics_match_training": true
+  },
+  {
+    "cell": "R",
+    "checkpoint": "best_composite.ckpt",
+    "epoch_0based": 1,
+    "checkpoint_sha256": "332b961cdac4a5baf1fada2c6cb1a612bd9f63319b38a3fc2eebba794aaad085",
+    "pixel_counts_match_training": true,
+    "global_and_event_metrics_match_training": true
+  },
+  {
+    "cell": "R",
+    "checkpoint": "last.ckpt",
+    "epoch_0based": 14,
+    "checkpoint_sha256": "9db40933d37103171d62afba76eafadf248d8506ece77d6175492ced27d7de69",
+    "pixel_counts_match_training": true,
+    "global_and_event_metrics_match_training": true
+  }
+]

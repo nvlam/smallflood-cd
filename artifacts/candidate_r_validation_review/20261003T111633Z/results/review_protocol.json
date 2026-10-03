@@ -1,0 +1,28 @@
+{
+  "pilot_root": "runs/candidate_r_v1/20261002T150633Z",
+  "audited_archive_sha256": "a70c3afe5bb4484aa845ede9a873a9cade6c0489facabf288cccb855d14c210d",
+  "evaluations": 4,
+  "split": "validation",
+  "test_used": false,
+  "training_performed": false,
+  "batch_size": 8,
+  "threshold": 0.5,
+  "object_boundary_protocol": {
+    "version": "object_boundary_patch_v2",
+    "connectivity": 8,
+    "match_iou": 0.1,
+    "matching": "greedy decreasing IoU, ties by prediction then GT ID; one-to-one",
+    "component_scope": "valid-masked patch components; do not merge across patches",
+    "small_definition": "GT area <= train-fitted threshold",
+    "small_primary": "recall of GT components not touching patch edge or 8-neighbor invalid pixels",
+    "small_secondary": "recall of all small patch-clipped GT components",
+    "boundary": "one-pixel inner contour; Chebyshev tolerance 2",
+    "boundary_iou": "IoU of two-pixel inner bands, not tolerance-dilated contours",
+    "boundary_valid": "valid mask eroded by 3 pixels; image exterior invalid",
+    "undefined": "zero denominator -> null; both boundaries empty -> F1/IoU null",
+    "aggregation": "sum counts before scores, separately global and per event; then event macro",
+    "checkpoint_selection": "unchanged event_pixel_v2; diagnostics do not select checkpoints"
+  },
+  "script_sha256": "309dba4c576e6073767cee6d73f6f5fb3dc54eccbba555450c0a92574f527484",
+  "anchor_sha256": "c14b51eb3d3a1b67be20f159e169db849d74235077a2c9f20c35ae462cb9d704"
+}
