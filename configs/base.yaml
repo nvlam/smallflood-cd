@@ -1,0 +1,10 @@
+seed: 42
+deterministic: true
+device: auto
+output_root: runs
+amp: true
+num_workers: 4
+logging:
+  tensorboard: true
+  log_every_steps: 25
+

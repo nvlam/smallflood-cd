@@ -1,0 +1,6 @@
+name: bit_sar_v2
+input_channels: 2
+pretrained: false
+# Fixed architecture: upstream base_transformer_pos_s4_dd8, dimension 32,
+# encoder depth 1, decoder depth 8, 8 heads, head dimension 64.
+# No architecture knobs: version changes must be explicit.

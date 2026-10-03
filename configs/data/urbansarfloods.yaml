@@ -1,0 +1,13 @@
+name: urbansarfloods
+root: data/processed/urbansarfloods
+manifest: data/processed/urbansarfloods/patch_manifest.csv
+split_file: data/splits/split_v1.yaml
+patch_size: 256
+channels: 2
+include_coherence: false
+normalization_stats: data/metadata/normalization_v1.json
+component_stats: data/metadata/component_stats_v1.json
+boundary_radius: 1
+boundary_tolerance: 2
+connectivity: 8
+

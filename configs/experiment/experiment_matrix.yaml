@@ -1,0 +1,19 @@
+seeds: [42, 1337, 2026]
+experiments:
+  - {name: proposed, config: ablations/full_proposed.yaml}
+  - {name: fc_siam_diff, config: fc_siam_diff.yaml}
+  - {name: bit, config: bit.yaml}
+  - {name: plain_bce, config: ablations/plain_bce.yaml}
+  - {name: standard_tversky, config: ablations/standard_tversky.yaml}
+  - {name: size_aware_only, config: ablations/size_aware_only.yaml}
+  - {name: boundary_only, config: ablations/boundary_only.yaml}
+  - {name: morphology_postprocess, config: ablations/morphology_postprocess.yaml}
+  - {name: weight_sensitivity, config: ablations/weight_sensitivity.yaml}
+  - {name: intensity_only, config: ablations/intensity_only.yaml}
+  - {name: intensity_coherence, config: ablations/intensity_coherence.yaml}
+  - {name: no_uncertain_mask, config: ablations/no_uncertain_mask.yaml}
+  - {name: with_uncertain_mask, config: ablations/with_uncertain_mask.yaml}
+  - {name: shift_robustness, config: ablations/shift_robustness.yaml}
+  - {name: reduced_decoder, config: ablations/reduced_decoder.yaml}
+deployment_checks:
+  - {name: fp32_onnx_tensorrt_parity, config: ../deployment/jetson_orin_nano.yaml}

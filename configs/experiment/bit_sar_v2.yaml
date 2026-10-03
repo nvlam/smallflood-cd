@@ -1,0 +1,31 @@
+# Engineering configuration only; not added to the 135-run matrix or pilot launcher.
+defaults:
+  base: ../base.yaml
+  data: ../data/urbansarfloods.yaml
+  model: ../model/bit_sar_v2.yaml
+training:
+  epochs: 15
+  batch_size: 8
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  patience: 16
+  gradient_clip_norm: 1.0
+loss:
+  bce_weight: 0.5
+  tversky_weight: 0.5
+  boundary_weight: 0.0
+  tversky_fp: 0.3
+  tversky_fn: 0.7
+  use_size_aware: false
+evaluation:
+  probability_threshold: 0.5
+  component_match_iou: 0.1
+  shift_pixels: 0
+  morphology: none
+provenance:
+  upstream_commit: adcd7aea6f234586ffffdd4e9959404f96271711
+  upstream_variant: base_transformer_pos_s4_dd8
+  implementation: bit_sar_v2
+  original_training_recipe_reproduced: false
+  initialization: fresh_normal_0.02_bn_fresh
+  output_adapter: class1_minus_class0

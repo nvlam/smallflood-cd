@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smallflood-cd"
+version = "0.1.0"
+description = "Lightweight, boundary-aware urban flood change detection"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.26",
+  "PyYAML>=6.0",
+  "torch>=2.2",
+  "torchvision>=0.17",
+  "einops==0.8.1",
+]
+
+[project.optional-dependencies]
+geo = ["rasterio>=1.3", "pandas>=2.1"]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+deploy = ["onnx>=1.16", "onnxruntime>=1.18"]
+
+[project.scripts]
+smallflood-train = "smallflood_cd.cli.train:main"
+smallflood-validate = "smallflood_cd.cli.validate:main"
+smallflood-export-onnx = "smallflood_cd.cli.export_onnx:main"
+smallflood-run-experiments = "smallflood_cd.cli.run_experiments:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"smallflood_cd.models.baselines.bit_upstream" = ["NOTICE.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

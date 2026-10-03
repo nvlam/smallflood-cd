@@ -1,0 +1,12 @@
+device: Jetson Orin Nano 8GB
+precision: fp16
+batch_size: 1
+input_shape: [1, 2, 256, 256]
+onnx_opset: 17
+warmup_runs: 100
+timed_runs: 500
+repetitions: 3
+max_latency_ms: 30.0
+max_peak_memory_mb: 2048
+max_model_size_mb: 20
+

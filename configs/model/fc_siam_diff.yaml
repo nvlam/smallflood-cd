@@ -1,0 +1,4 @@
+name: fc_siam_diff
+input_channels: 2
+widths: [16, 32, 64, 128]
+

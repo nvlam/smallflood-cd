@@ -1,0 +1,17 @@
+{
+  "pilot": "runs/candidate_r_v1/20261002T150633Z",
+  "archive_sha256": "a70c3afe5bb4484aa845ede9a873a9cade6c0489facabf288cccb855d14c210d",
+  "files": {
+    "COMPLETE.json": "a57e2ce8f4b5f7253dff4e7ab07ed8e6debbe425b41e7b234383c250b7598138",
+    "provenance.json": "ffbca53d29d1b1db7140c3ef44432985e76a45e1858df4666be183b3d772251c",
+    "eligibility_report.json": "ec4a02d67853eae94c1337011b1174460f961684ac5debc8a8325c30f1512605",
+    "A_control/config_resolved.yaml": "bf23fc5e3003585cfc1a2d1ddb98728f348a76272c2da1d504ea612c7e2974cb",
+    "A_control/environment.json": "c934808cdbdb7dba883e49646e8d13377e8950ac2897c7e4897343b90cadea76",
+    "A_control/summary.json": "7e79d8ff72e4ae72ba63060c3a4f5e5778c2011ac2e31fd4a31f2fdbac9d5c8f",
+    "A_control/metrics.jsonl": "d45f06faa0340593133cf9cc823f822720d842c040cbaa4827b5697a4dec307b",
+    "R/config_resolved.yaml": "6cf679fae0fa3c545a11e171f272e9b26bfb24dcea8b73191bb6c06e7359a1d7",
+    "R/environment.json": "c934808cdbdb7dba883e49646e8d13377e8950ac2897c7e4897343b90cadea76",
+    "R/summary.json": "ffb7f04657791bcbe1b41f1a7160c908d454f3cd3194fc09c3e4bea9cdf21937",
+    "R/metrics.jsonl": "7d535ec3811ead799a3aa5df4e4d7f3bd2a111d253c973fbfa4c61d1ced5e300"
+  }
+}

@@ -1,0 +1,3 @@
+[console_scripts]
+smallflood-train = smallflood_cd.cli.train:main
+smallflood-validate = smallflood_cd.cli.validate:main

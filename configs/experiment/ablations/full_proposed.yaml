@@ -1,0 +1,7 @@
+defaults: {base: ../../base.yaml, data: ../../data/urbansarfloods.yaml, model: ../../model/smallflood_cdnet.yaml}
+model: {boundary_head: true}
+loss: {bce_weight: 0.4, tversky_weight: 0.4, boundary_weight: 0.2, tversky_fp: 0.3, tversky_fn: 0.7, use_size_aware: true, component_alpha: 1.0, component_gamma: 0.5, component_weight_cap: 4.0}
+training: {epochs: 120, batch_size: 16, learning_rate: 0.0003, weight_decay: 0.0001, patience: 15, gradient_clip_norm: 1.0}
+evaluation: {probability_threshold: 0.5, component_match_iou: 0.1, shift_pixels: 0, morphology: none}
+timing: {warmup_runs: 20, timed_runs: 100}
+
