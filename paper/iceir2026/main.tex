@@ -1,5 +1,5 @@
 % ICEIR 2026 submission draft (Springer LNNS / llncs class).
-% Draft status: first full draft, 2026-10-10. Items marked TODO need the authors' input.
+% Draft status: revised after the simulated review of 2026-10-10 (docs/paper_review_iceir2026_20261010.md). Items marked TODO need the authors' input.
 % Every number is quoted from the closed result records in docs/ (see docs/paper_outline_iceir2026_20261010.md).
 \documentclass[runningheads]{llncs}
 \usepackage[T1]{fontenc}
@@ -20,7 +20,7 @@
 \titlerunning{Seed and Event Sensitivity in Lightweight SAR Flood Change Detection}
 
 % TODO(authors): names, order, affiliations, corresponding author, ORCID.
-% TODO(authors): if the submission must be anonymous, keep this block as is.
+% The submission is not anonymous (authors' decision of 2026-10-10).
 \author{Author names to be supplied}
 \authorrunning{Authors to be supplied}
 \institute{Affiliation to be supplied\\
@@ -29,35 +29,58 @@
 \maketitle
 
 \begin{abstract}
-Lightweight change detectors are attractive for mapping floods in synthetic aperture radar
-(SAR) imagery, and small-object losses or boundary heads are natural additions when small
-urban floods matter. We report what happened when such additions were tested under
-pre-specified protocols instead of a single training run. On the UrbanSARFloods dataset we
-train a 1.1M-parameter Siamese network in a $2\times 2$ factorial (size-weighted loss,
-boundary package) together with two baselines, FC-Siam-Diff and a SAR adaptation of BIT,
-over six seeds and two training recipes, and evaluate all 36 runs once on a sealed test set.
-Neither component has a consistent effect on validation or test, and every model recovers
-only 2--7\% of interior small floods on test. The ranking between model families is stable
-across seeds, whereas the ranking among the factorial variants is not. Seed-to-seed variation
-concentrates in a single event on each split, but a pre-specified explanation based on flood
-fraction is not supported by the test set. A cost study shows that parameter count, counted
-FLOPs, GPU latency and CPU latency rank the models in four different orders. We conclude with
-reporting recommendations for this task.
+Comparisons between deep models are often reported from a single training run. We study what
+that practice hides in one applied task: mapping floods from pairs of synthetic aperture
+radar (SAR) images with lightweight change detectors, where losses for small objects and
+boundary heads are natural additions. On the UrbanSARFloods dataset we train a
+1.1M-parameter Siamese network in a $2\times 2$ factorial (size-weighted loss, boundary
+package) together with two baselines, FC-Siam-Diff and a SAR adaptation of the Bitemporal
+Image Transformer, over six seeds and two training recipes, under rules fixed in advance, and
+evaluate all 36 runs once on a sealed test set. Under a 15-epoch regime without augmentation,
+we detect no reliable effect of either component: on test the paired contrasts are at most
+about 2 percentage points and of inconsistent sign, and every model recovers only 2--7\% of
+small flooded regions. The ranking between model families is stable across seeds, whereas
+the ranking among the factorial variants is not. Seed-to-seed variation concentrates in a
+single event on each split, but a pre-specified explanation based on flood fraction is not
+supported by the test set. Parameter count, counted operations, GPU latency and CPU latency
+rank the models in four different orders. We close with reporting recommendations.
 
 \keywords{SAR \and flood mapping \and change detection \and lightweight models \and seed sensitivity \and negative result \and efficiency}
 \end{abstract}
 
 \section{Introduction}
 
-Synthetic aperture radar (SAR) observes the ground through cloud and at night, which makes it
-the usual data source for mapping floods while they happen~\cite{zhao2024urbansarfloods}.
-Public datasets such as Sen1Floods11~\cite{bonafilia2020sen1floods11} have made deep
-segmentation models the standard approach for open-area flooding. Urban flooding is harder.
-Buildings produce strong and geometry-dependent backscatter, flooded streets are narrow, and
-the flooded regions are often only a few pixels wide. The authors of
-UrbanSARFloods report that common training choices struggle with this imbalance and that urban
-flood detection remains challenging~\cite{zhao2024urbansarfloods}; earlier work found that
-interferometric coherence helps in built-up areas~\cite{li2019urbanflood}.
+A common way to evaluate a new loss or network component is to train one model with it and
+one without, and compare two numbers. It is well documented that such comparisons can be
+decided by the random seed~\cite{reimers2017distributions,bouthillier2021variance,picard2021seed}
+and that simple baselines often remain competitive once comparisons are
+controlled~\cite{corley2024realitycheck}. This paper is a worked case of that problem in an
+applied setting where it matters, because the evaluation data consist of only a few
+independent events.
+
+The task is flood mapping from satellite radar. A synthetic aperture radar (SAR) sensor
+images the ground through cloud and at night, which makes it the usual data source while a
+flood is happening~\cite{zhao2024urbansarfloods}. Given one image acquired before the flood
+and one during it, a model must output a mask of flooded pixels; this is a
+\emph{change-detection} problem (Fig.~\ref{fig:example}). Public datasets such as
+Sen1Floods11~\cite{bonafilia2020sen1floods11} have made deep segmentation models the
+standard approach for open-area flooding. Urban flooding is harder: buildings produce strong
+radar returns that depend on geometry, flooded streets are narrow, and the flooded regions
+are often only a few pixels wide. The authors of UrbanSARFloods report that common training
+choices struggle with this imbalance and that urban flood detection remains
+challenging~\cite{zhao2024urbansarfloods}; earlier work found that interferometric coherence
+helps in built-up areas~\cite{li2019urbanflood}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/example_lumberton_A_s201.png}
+\caption{The task. From left to right: radar backscatter (one polarization) before and during
+the flood, the flood label, a prediction, and the error map (green: correct flood; red: false
+alarm; blue: missed flood). A validation patch from the Lumberton event, variant A, shown to
+illustrate the task; it is one of the first patches by identifier and was not chosen to be
+representative. Note the small flooded regions that are missed.}
+\label{fig:example}
+\end{figure}
 
 Two further pressures shape model design for this task. First, flood maps are wanted quickly
 and, increasingly, close to the sensor, which favours small
@@ -71,8 +94,8 @@ size-weighted Tversky loss and a thin boundary head. A single-seed pilot gave re
 could be read as a trade-off between the two components. When we repeated the comparison
 under protocols fixed in advance, with new seeds, a second training recipe and finally a
 sealed test set, the component effects did not replicate. We therefore report the study as
-it is: a controlled negative result, together with what it shows about seed and event
-sensitivity and about the cost of the models involved.
+it is: a controlled comparison in which no reliable benefit was detected, together with what
+it shows about seed and event sensitivity and about the cost of the models involved.
 
 We ask three questions. \textbf{RQ1}: do size weighting and a boundary package have a
 consistent effect across seeds, two training recipes and a held-out test set? \textbf{RQ2}:
@@ -82,19 +105,17 @@ accuracy--cost trade-off of sub-5M-parameter change detectors on a GPU and on a 
 Our contributions are findings rather than a new method:
 \begin{itemize}
 \item A controlled negative result for both components across six seeds, two recipes and one
-sealed test evaluation (Sect.~\ref{sec:components}).
+sealed test evaluation: no reliable effect was detected, and any effect on test is at most
+about two percentage points (Sect.~\ref{sec:components}).
 \item An analysis of seed and event sensitivity, including a pre-specified explanation that
 the test set did not support (Sects.~\ref{sec:seeds}--\ref{sec:recipe}).
 \item An accuracy--cost benchmark of three model families with several cost indicators
 measured on two devices (Sect.~\ref{sec:cost}).
-\item Protocols, decision rules, code and per-run records that allow each number to be traced.
 \end{itemize}
 
-Single-run comparisons are known to be fragile in machine
-learning~\cite{reimers2017distributions,bouthillier2021variance,picard2021seed}, and simple
-baselines often remain competitive in change detection~\cite{corley2024realitycheck}. The
-present study adds a worked case for SAR flood mapping, where validation sets contain only a
-handful of events.
+All conclusions are conditional on the training regime we used (15 epochs, no data
+augmentation, training from scratch) and on one dataset. We state these limits where each
+claim is made.
 
 \section{Related Work}
 
@@ -107,7 +128,8 @@ areas~\cite{zhao2024urbansarfloods}. We use its intensity channels only.
 
 \paragraph{Bitemporal change detection.} Flood mapping from a pre-event and a co-event image
 is a change-detection problem. Fully convolutional Siamese networks~\cite{daudt2018fcsiam}
-and transformer-based models such as BIT~\cite{chen2022bit} are common starting points, and
+and transformer-based models such as the Bitemporal Image Transformer
+(BIT)~\cite{chen2022bit} are common starting points, and
 Siamese designs with attention have been applied to SAR flood
 pairs~\cite{saleh2024damnet,saleh2024token}. Two recent studies caution that architectural
 novelty explains less than it appears to: a plain U-Net remains a top performer on standard
@@ -145,15 +167,19 @@ This is a statement about our searches, not a claim that no such study exists.
 \subsection{Data and Splits}
 
 We use the Sentinel-1 intensity channels of UrbanSARFloods~\cite{zhao2024urbansarfloods}:
-VH and VV backscatter in decibels for the pre-event and co-event dates. The two flood classes
-are merged into one binary flood class. Scenes are cut into non-overlapping
+backscatter in decibels in two polarizations (VH and VV) for the pre-event and co-event
+dates. The dataset's two flood classes, flooded open areas and flooded urban areas, are
+merged into one binary flood class. We therefore do not measure urban-specific performance;
+``small'' below refers to the size of a flooded region, not to its land-cover class. Scenes are cut into non-overlapping
 $256\times 256$ patches, and each input channel is standardized with statistics fitted on
 training pixels.
 
 Events, not patches, are held out (Table~\ref{tab:data}). The dataset's test events stay as
 test; the remaining events are re-partitioned into 12 training and 3 validation events by a
-fixed hash rule. \emph{This split differs from the dataset's official partition, so our
-numbers are not comparable with those in the dataset paper.} A connected component is
+fixed hash rule. \emph{This split, the binary target and the patch size all differ from the
+setup of the dataset paper, so our numbers cannot be compared with its numbers.} The dataset
+paper's qualitative finding, that urban and small flooded areas are the hard part, is
+consistent with what we observe. A connected component is
 \emph{small} if its area within the patch is at most 35 pixels, the 25th percentile of
 training components, and \emph{interior} if it does not touch the patch border or an invalid
 pixel.
@@ -180,27 +206,43 @@ Nova Kakhovka contains 4,379 of the 4,899 interior small components of the test 
 
 \subsection{Models}
 
-\emph{SmallFlood-CDNet} is a Siamese network with a MobileNetV3-small
-encoder~\cite{howard2019mobilenetv3} trained from scratch, a temporal-difference fusion and a
-light decoder (1.08M parameters). Its loss is $0.4\,\mathrm{BCE} + 0.4\,\mathrm{Tversky}$ with
-false-positive and false-negative weights 0.3 and 0.7~\cite{salehi2017tversky}. We study two
-optional components in a $2\times 2$ factorial:
+\emph{SmallFlood-CDNet} (1.08M parameters) is a Siamese encoder--decoder. A shared
+MobileNetV3-small encoder~\cite{howard2019mobilenetv3}, trained from scratch with a
+two-channel input, extracts features at strides 4, 8, 16 and 32 from each image. At every
+scale the absolute difference and the element-wise product of the two feature maps are
+concatenated and projected to 24, 32, 64 and 96 channels. A decoder with three
+upsample-and-skip stages built from depthwise-separable convolutions produces a stride-4
+feature map, from which a convolutional head predicts change logits that are upsampled
+bilinearly to the input size. The loss is $0.4\,\mathrm{BCE} + 0.4\,\mathrm{Tversky}$, where
+BCE is binary cross-entropy and the Tversky loss~\cite{salehi2017tversky} uses
+false-positive and false-negative weights of 0.3 and 0.7. We study two optional components
+in a $2\times 2$ factorial:
 \begin{itemize}
-\item \textbf{Size weighting.} Positive pixels of a component with area $a$ receive weight
-$1 + \min\bigl(4, (65/a)^{0.5}\bigr)$ in both loss terms, where 65 pixels is the median
-training component area.
-\item \textbf{Boundary package.} A thin boundary head whose output is added to the change
-logits as a residual, with an auxiliary boundary loss of weight 0.2.
+\item \textbf{Size weighting.} Positive pixels of a flooded region with area $a$ receive
+weight $1 + \min\bigl(4, (65/a)^{0.5}\bigr)$ in both loss terms, where 65 pixels is the
+median area of training regions.
+\item \textbf{Boundary package.} A boundary head (one depthwise-separable convolution and a
+$1\times 1$ convolution) predicts a boundary map from the decoder features. A second
+$1\times 1$ convolution maps the decoder features and the boundary probability to a residual,
+which is scaled by a learnable scalar (initially 0.1, kept in $[0,1]$) and added to the
+change logits. The boundary map is supervised with a binary cross-entropy plus Dice loss of
+weight 0.2 on the one-pixel morphological gradient of the label.
 \end{itemize}
 Variant A uses neither, B size weighting, C the boundary package and D both.
 
-The baselines are \emph{FC-Siam-Diff}~\cite{daudt2018fcsiam} (0.49M parameters) and
-\emph{BIT-SAR~v2} (3.49M parameters), our two-channel adaptation of BIT~\cite{chen2022bit}
-trained from scratch. Both use $0.5\,\mathrm{BCE} + 0.5\,\mathrm{Tversky}$. The comparison
-between families is a whole-method comparison: besides architecture, the baselines differ from
-SmallFlood-CDNet in loss coefficients, initialization scheme and training script.
+The baselines are \emph{FC-Siam-Diff}~\cite{daudt2018fcsiam} with encoder widths 16, 32, 64
+and 128 (0.49M parameters) and \emph{BIT-SAR~v2} (3.49M parameters). The latter is the
+Bitemporal Image Transformer (BIT)~\cite{chen2022bit} in its published configuration with
+eight decoder blocks, adapted to SAR: the input stem takes two channels, unused
+classification layers are removed, all weights are initialized randomly, and the two-class
+output is converted to one change logit. Both baselines use
+$0.5\,\mathrm{BCE} + 0.5\,\mathrm{Tversky}$. The comparison between families is a
+\emph{whole-method} comparison: besides architecture, the baselines differ from
+SmallFlood-CDNet in loss coefficients, initialization scheme and training script, and the
+three families did not receive the same tuning effort (Sect.~\ref{sec:training}).
 
 \subsection{Training}
+\label{sec:training}
 
 All runs use AdamW with weight decay $10^{-4}$, gradient clipping at 1.0, batch size 8,
 15 epochs, 32-bit precision and no data augmentation. Training is fully deterministic: the
@@ -212,16 +254,24 @@ We use two recipes. In the \emph{original} recipe, SmallFlood-CDNet and FC-Siam-
 learning rate of $3\times 10^{-4}$ and BIT-SAR~v2 uses $10^{-4}$. In recipe \emph{R1} all
 models use $10^{-4}$. R1 was selected for variant A in a separate screening study that
 compared two learning rates and two schedules on an internal development split of training
-events only, without loading the validation events.
+events only (the 2019 Canada and Japan events), without loading the validation events. It
+was not tuned for the other variants or for the baselines, and the learning rate of
+BIT-SAR~v2 was fixed at $10^{-4}$ from the start. The study comprises 36 full training runs
+(six models, six seeds) plus 12 screening runs, on one NVIDIA RTX~A6000.
+
+This regime is short and uses no augmentation. Final training loss was nearly identical
+across seeds within each model (for example 0.167--0.172 for variant A under the original
+recipe), but we did not study longer schedules, and our conclusions hold for this regime.
 
 \subsection{Metrics}
 
 The primary metric is \emph{event-macro F1}: pixel counts are pooled within each event and
 the per-event F1 scores are averaged. We also report pooled pixel F1; component F1 with
-one-to-one matching at intersection-over-union $\geq 0.1$; recall of small components,
-interior and clipped; boundary F1 with a two-pixel tolerance; and the intersection-over-union
-of a two-pixel inner boundary band. The decision threshold is fixed at 0.5. Results are
-patch-level; scenes are not reassembled.
+one-to-one matching at intersection-over-union (IoU) $\geq 0.1$; recall of small components,
+interior and clipped; boundary F1 with a two-pixel tolerance; and the IoU of a two-pixel inner boundary band. The decision threshold is fixed at 0.5, and we
+report no threshold-free measure on validation or test; Sect.~\ref{sec:events} returns to
+this. Results are patch-level; scenes are not reassembled. With three seeds per recipe we
+summarize spread by the range (maximum minus minimum) and attempt no variance estimate.
 
 The primary checkpoint is the last one (epoch 15). Selecting the best validation epoch chose
 transient early peaks in several runs, so best-epoch results are kept only as secondary
@@ -243,7 +293,10 @@ at least as good as A and as BIT-SAR~v2 in event-macro F1 in every seed, contrad
 is worse than the same comparator in every seed, otherwise inconsistent.
 \end{itemize}
 No statistical test is applied to pixels, patches or components, because they are not
-independent replicates.
+independent replicates. These rules are strict by construction: ``supported'' and
+``contradicted'' each require six paired contrasts of one sign, so noise alone makes
+``inconsistent'' a likely outcome. We therefore also report the individual contrasts
+(Table~\ref{tab:contrasts}).
 
 \begin{table}[t]
 \centering
@@ -275,14 +328,16 @@ screening.
 \label{sec:costprotocol}
 
 Following Dehghani et al.~\cite{dehghani2022efficiency} we report several indicators for one
-pre/post pair of $256\times 256$ patches: parameters; FLOPs counted for convolutions and
-matrix multiplications only; serialized weight size; peak GPU memory; batch-1 latency in
-PyTorch on an NVIDIA RTX~A6000 at 32-bit and 16-bit precision (100 warm-up and 500 timed
-runs, three repetitions); and batch-1 latency in ONNX Runtime on an Intel Xeon Silver~4310
+pre/post pair of $256\times 256$ patches: parameters; floating-point operations (FLOPs)
+counted for convolutions and matrix multiplications only; serialized weight size; peak GPU memory; batch-1 latency in
+PyTorch on an NVIDIA RTX~A6000 at 32-bit (FP32) and 16-bit (FP16) precision (100 warm-up
+and 500 timed runs, three repetitions); and batch-1 latency of the model exported to the Open Neural Network Exchange
+(ONNX) format, run in ONNX
+Runtime on an Intel Xeon Silver~4310 server processor
 with one and four threads (20 warm-up and 100 timed runs, three repetitions). The server was
 shared. GPU repetitions ran only when no other process used the GPU, apart from an idle
-process holding 314~MB at 0\% utilization during our measurements. We did not measure an
-edge device, and we make no claim about one.
+process holding 314~MB at 0\% utilization during our measurements. Both devices are
+server hardware. We did not measure an edge device, and we make no claim about one.
 
 \section{Results}
 
@@ -290,16 +345,23 @@ edge device, and we make no claim about one.
 \label{sec:components}
 
 Table~\ref{tab:rules} gives the outcome of the three rules on validation and on test for
-both recipes. Both component rules are inconsistent in all four settings. On test the
-contrasts are small: between $-0.4$ and $+2.3$\pp{} for size weighting and between $-1.1$ and
-$+2.2$\pp{} for the boundary package, at an interior-small recall of 2--7\% (Table~\ref{tab:test}).
+both recipes. Both component rules are inconsistent in all four settings.
+
+``Inconsistent'' must not be read as ``no effect''. Table~\ref{tab:contrasts} lists the
+paired test contrasts. For size weighting, 8 of the 12 contrasts are positive, with a mean
+of $+0.7$\pp{} and a largest value of $+2.3$\pp{}; one contrast of $-0.08$\pp{} is what
+makes the R1 outcome inconsistent. For the boundary package, 9 of 12 are positive, with a
+mean of $+0.4$\pp{}. Our reading is therefore narrow: we detected no reliable effect, and if
+an effect exists on test it is at most about two points. This is far from the benefit that
+would justify the components, but it is not evidence that they do nothing.
 
 \begin{table}[t]
 \centering
 \caption{Rule outcomes and the range of per-seed contrasts in percentage points.
 Size: interior-small recall, $B-A$ and $D-C$. Boundary: inner-band IoU, $C-A$ and $D-B$.
-Baseline: event-macro F1, FC-Siam-Diff minus A and minus BIT-SAR~v2. Validation with the
-original recipe uses two confirmation seeds (Sect.~\ref{sec:protocol}).}
+Baseline: event-macro F1, FC-Siam-Diff (FC) minus A and minus BIT-SAR~v2 (BIT). Validation
+with the original recipe uses two confirmation seeds, and the best checkpoint for the size
+and baseline rules (Sect.~\ref{sec:protocol}); all other entries use the last checkpoint.}
 \label{tab:rules}
 \footnotesize\setlength{\tabcolsep}{3pt}
 \resizebox{\textwidth}{!}{%
@@ -319,41 +381,69 @@ Test, R1 & inconsistent & inconsistent & contradicted \\
 \end{tabular}}
 \end{table}
 
+\begin{table}[t]
+\centering
+\caption{Paired test contrasts per seed in percentage points, last checkpoint. Size
+weighting: interior-small recall. Boundary package: inner-band IoU.}
+\label{tab:contrasts}
+\footnotesize\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llrrrr}
+\toprule
+ & & \multicolumn{2}{c}{Size weighting} & \multicolumn{2}{c}{Boundary package} \\
+Recipe & Seed & $B-A$ & $D-C$ & $C-A$ & $D-B$ \\
+\midrule
+Original & 42   & $-0.35$ & $+0.12$ & $+0.41$ & $+0.03$ \\
+         & 1337 & $-0.12$ & $-0.12$ & $+1.62$ & $+2.19$ \\
+         & 2026 & $+1.20$ & $+2.31$ & $-1.09$ & $+0.17$ \\
+R1       & 201  & $+1.71$ & $+0.88$ & $-0.33$ & $+0.28$ \\
+         & 202  & $+0.43$ & $-0.08$ & $+0.28$ & $+0.54$ \\
+         & 203  & $+1.18$ & $+1.76$ & $-0.42$ & $+0.91$ \\
+\midrule
+\multicolumn{2}{l}{Positive contrasts} & \multicolumn{2}{c}{8 of 12} & \multicolumn{2}{c}{9 of 12} \\
+\multicolumn{2}{l}{Mean} & \multicolumn{2}{c}{$+0.74$} & \multicolumn{2}{c}{$+0.38$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 The baseline rule is contradicted on test because BIT-SAR~v2 exceeds FC-Siam-Diff in every
 seed of both recipes. FC-Siam-Diff in turn exceeds variant A in all six seeds.
 
-The most direct evidence is in Table~\ref{tab:test}: with 4,899 interior small components in
-the test set, every model recalls between 2.4\% and 6.7\% of them on average. Size weighting
-does not change this. The small-flood problem that motivated the design is, on this
-benchmark, unsolved by all six models.
+The clearest evidence is in Table~\ref{tab:test}: with 4,899 interior small regions in the
+test set, every model recalls between 2.4\% and 6.7\% of them on average, with or without
+size weighting. Two cautions apply. Nova Kakhovka holds 89\% of those regions, so the test
+evidence on small regions rests mainly on one event. And a recall this low may itself be a
+product of the training regime; a loss re-weighting has little to act on when the model
+finds almost none of the regions.
 
 \begin{table}[t]
 \centering
 \caption{Test results at the last checkpoint: mean over three seeds, with the range
-(max\,$-$\,min) in brackets, in percent. ``Int.\ small'' is interior-small recall.}
+(max\,$-$\,min) in brackets, in percent. ``Int.\ small'' is interior-small recall and
+``Band IoU'' the inner-band IoU.}
 \label{tab:test}
 \footnotesize\setlength{\tabcolsep}{3pt}
-\begin{tabular}{llrrrrr}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrrr}
 \toprule
-Recipe & Model & Event F1 & Pixel F1 & Comp.\ F1 & Int.\ small & Bound.\ F1 \\
+Recipe & Model & Event F1 & Pixel F1 & Comp.\ F1 & Int.\ small & Bound.\ F1 & Band IoU \\
 \midrule
 \multirow{6}{*}{Original}
- & A   & 62.0 (4.1)  & 49.9 (7.8)  & 19.3 (1.9) & 3.0 (1.0) & 40.1 (2.3) \\
- & B   & 55.3 (10.3) & 46.3 (6.3)  & 19.1 (1.0) & 3.2 (1.1) & 37.4 (1.2) \\
- & C   & 62.2 (10.0) & 55.6 (13.9) & 18.9 (4.8) & 2.7 (1.8) & 40.0 (9.8) \\
- & D   & 61.3 (10.5) & 52.8 (13.6) & 19.2 (1.9) & 3.4 (1.6) & 39.2 (6.7) \\
- & FC-Siam-Diff & 71.0 (4.5) & 61.1 (15.3) & 19.2 (4.1) & 6.7 (0.7) & 50.2 (5.8) \\
- & BIT-SAR v2   & 73.9 (4.1) & 70.0 (4.2)  & 27.1 (4.9) & 5.1 (2.9) & 52.1 (6.0) \\
+ & A   & 62.0 (4.1)  & 49.9 (7.8)  & 19.3 (1.9) & 3.0 (1.0) & 40.1 (2.3) & 15.5 (1.1) \\
+ & B   & 55.3 (10.3) & 46.3 (6.3)  & 19.1 (1.0) & 3.2 (1.1) & 37.4 (1.2) & 14.3 (0.3) \\
+ & C   & 62.2 (10.0) & 55.6 (13.9) & 18.9 (4.8) & 2.7 (1.8) & 40.0 (9.8) & 15.8 (3.3) \\
+ & D   & 61.3 (10.5) & 52.8 (13.6) & 19.2 (1.9) & 3.4 (1.6) & 39.2 (6.7) & 15.1 (2.5) \\
+ & FC-Siam-Diff & 71.0 (4.5) & 61.1 (15.3) & 19.2 (4.1) & 6.7 (0.7) & 50.2 (5.8) & 26.3 (4.5) \\
+ & BIT-SAR v2   & 73.9 (4.1) & 70.0 (4.2)  & 27.1 (4.9) & 5.1 (2.9) & 52.1 (6.0) & 19.8 (1.2) \\
 \midrule
 \multirow{6}{*}{R1}
- & A   & 60.0 (8.6)  & 45.6 (6.0)  & 17.9 (2.7) & 2.4 (1.1) & 37.9 (7.2) \\
- & B   & 58.3 (6.2)  & 44.1 (6.8)  & 18.9 (0.9) & 3.5 (0.2) & 38.1 (2.3) \\
- & C   & 59.8 (11.9) & 47.7 (11.0) & 18.0 (4.3) & 2.7 (2.8) & 37.6 (10.1) \\
- & D   & 59.4 (4.9)  & 48.1 (3.8)  & 19.1 (1.9) & 3.5 (1.8) & 38.7 (2.9) \\
- & FC-Siam-Diff & 65.5 (6.4) & 59.5 (11.8) & 15.9 (4.4) & 4.7 (4.4) & 44.7 (7.6) \\
- & BIT-SAR v2   & 74.2 (8.5) & 70.5 (9.2)  & 25.6 (10.2) & 4.0 (4.1) & 51.4 (13.6) \\
+ & A   & 60.0 (8.6)  & 45.6 (6.0)  & 17.9 (2.7) & 2.4 (1.1) & 37.9 (7.2) & 14.3 (3.1) \\
+ & B   & 58.3 (6.2)  & 44.1 (6.8)  & 18.9 (0.9) & 3.5 (0.2) & 38.1 (2.3) & 13.9 (0.9) \\
+ & C   & 59.8 (11.9) & 47.7 (11.0) & 18.0 (4.3) & 2.7 (2.8) & 37.6 (10.1) & 14.1 (3.7) \\
+ & D   & 59.4 (4.9)  & 48.1 (3.8)  & 19.1 (1.9) & 3.5 (1.8) & 38.7 (2.9) & 14.5 (1.2) \\
+ & FC-Siam-Diff & 65.5 (6.4) & 59.5 (11.8) & 15.9 (4.4) & 4.7 (4.4) & 44.7 (7.6) & 23.1 (4.4) \\
+ & BIT-SAR v2   & 74.2 (8.5) & 70.5 (9.2)  & 25.6 (10.2) & 4.0 (4.1) & 51.4 (13.6) & 19.5 (3.7) \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \subsection{Seed Sensitivity and Rank Stability}
@@ -413,6 +503,9 @@ SmallFlood-CDNet variant with one exception (variant C exceeds FC-Siam-Diff in o
 each recipe. A study that ranked A--D from one seed would have reported an ordering that the
 next seed reverses.
 
+The family order should be read with the caveat of Sect.~\ref{sec:training}: it compares
+whole methods that differ in more than architecture and that were not tuned equally.
+
 \subsection{Variation Concentrates in One Event, but Flood Fraction Does Not Explain It}
 \label{sec:events}
 
@@ -436,9 +529,13 @@ the \emph{highest} flood fraction and almost all of the small components. It has
 range in the other 8 groups. All 14 runs with a test event below 20\% F1 have Nova Kakhovka
 as that event, all 14 are SmallFlood-CDNet variants, and in 12 of them the model predicts more
 flood pixels than the truth. No FC-Siam-Diff or BIT-SAR~v2 run falls below 20\% on any test
-event. We can therefore say that seed sensitivity is event-specific, and that it took the
-form of over-prediction on one event per split for the smallest model family. We cannot say
-which property of an event causes it; flood fraction is not it.
+event. We can therefore say that, at a fixed threshold of 0.5, seed sensitivity took the form of
+over-prediction on one event per split for the smallest model family. We cannot say which
+property of an event causes it; flood fraction is not it. Nor can we say whether the
+affected runs rank pixels poorly or are only miscalibrated on that event, because we report
+no threshold-free measure on validation or test. Miscalibration under event shift,
+under-training, the false-negative weight of the Tversky loss and the lack of augmentation
+all remain untested explanations.
 
 \subsection{A Recipe Chosen on Held-Out Training Events Did Not Transfer}
 \label{sec:recipe}
@@ -457,13 +554,11 @@ failure consistent instead of removing it. On test the two recipes are close for
 (62.0\% and 60.0\%), R1 is worse for FC-Siam-Diff (71.0\% and 65.5\%), and BIT-SAR~v2, which
 used the same learning rate in both, is unchanged (73.9\% and 74.2\%).
 
-This stage also exposed a weakness in our own stability rule. It required a small range of
-event-macro F1 across seeds and a per-seed F1 on the hardest event of at least half of the
-median over seeds. A model that fails in every seed has a low median and passes. Variant A
-under R1 was therefore labelled ``stable'' at a Lumberton F1 below 10\%. We noticed this
-before the last seed finished, kept the rule as written, and report the label together with
-its meaning: consistent, not good. A stability rule needs an absolute floor or a reference
-model.
+This stage also exposed a weakness in our own stability rule, which compared each seed with
+the median over seeds. A model that fails in every seed passes such a rule, and variant A
+under R1 was labelled ``stable'' at a Lumberton F1 below 10\%. We kept the rule as written
+and report what the label means here: consistent, not good. A stability rule needs an
+absolute floor or a reference model.
 
 \subsection{Accuracy and Cost}
 \label{sec:cost}
@@ -471,8 +566,9 @@ model.
 \begin{table}[t]
 \centering
 \caption{Cost for one pair of $256\times 256$ patches. FLOPs count convolutions and matrix
-multiplications only. GPU: PyTorch on an RTX~A6000, batch 1, median latency. CPU: ONNX Runtime
-on a Xeon Silver~4310, batch 1, median latency. Size and peak memory are for 32-bit weights.}
+multiplications only. GPU: PyTorch on an RTX~A6000, batch 1, median latency at 32-bit (FP32) and 16-bit (FP16)
+precision. CPU: ONNX Runtime on a Xeon Silver~4310, batch 1, median latency with one and
+four threads. Size and peak memory are for 32-bit weights.}
 \label{tab:cost}
 \footnotesize\setlength{\tabcolsep}{3pt}
 \resizebox{\textwidth}{!}{%
@@ -495,19 +591,25 @@ by a factor of 20 over FC-Siam-Diff and 62 over BIT-SAR~v2. By GPU latency, FC-S
 fastest and SmallFlood-CDNet is 2.9 times slower despite its low FLOP count. By CPU latency,
 SmallFlood-CDNet is fastest: on one thread FC-Siam-Diff is 7.6 times and BIT-SAR~v2 32.8 times
 slower. This is the pattern that Dehghani et al.~\cite{dehghani2022efficiency} warn about,
-observed here within a single task.
+observed here within a single task. We did not investigate why the model with the fewest
+counted operations is slower on the GPU, and we offer no explanation.
 
 Half precision did not reduce batch-1 latency on this GPU for any model, although it roughly
-halved the stored size and reduced peak memory. On the validation split, 16-bit inference
+halved the stored size and reduced peak memory. At batch size 8 it raised throughput for
+FC-Siam-Diff (1,020 to 1,662 pairs per second) and BIT-SAR~v2 (233 to 291) but not for
+SmallFlood-CDNet (708 to 566). On the validation split, 16-bit inference
 agreed with 32-bit inference on at least 99.989\% of valid pixels and changed no reviewed
 metric by more than 0.18\pp{}; ONNX Runtime agreed with PyTorch on all pixels of the 64
-patches we compared. Timing on a shared server is noisy, and some repetitions differed
-visibly; we report the values as measured.
+patches we compared. Timing on a shared server is noisy: the three repetition medians were 8.73, 8.70 and
+8.67~ms for SmallFlood-CDNet at FP32, but 3.90, 2.59 and 3.84~ms for FC-Siam-Diff at FP16.
+We report the values as measured and did not repeat measurements.
 
 Figure~\ref{fig:cost} combines Tables~\ref{tab:test} and~\ref{tab:cost}. The model that is
 cheapest on a CPU is the least accurate, and the model that is most accurate on test, and the only one that never collapsed on a
 validation event, is the most expensive on every indicator. FC-Siam-Diff sits between them,
-with the caveat that its accuracy depends more on the recipe.
+with the caveat that its accuracy depends more on the recipe. The result of this section is
+that cost indicators disagree, not that a particular model suits edge deployment: both
+devices are server hardware, and the accuracy ranking is a whole-method comparison.
 
 \begin{figure}[t]
 \centering
@@ -541,14 +643,16 @@ appears twice, once per device, joined by a dashed line.}
 in one seed are within the variation between seeds. The discovery seed suggested that size
 weighting \emph{reduced} interior-small recall by 13 points; later seeds showed changes of
 either sign, and on a test set with thirteen times more small components the contrasts are
-within about two points. We do not conclude that size weighting or boundary supervision can
-never help. We conclude that, for this model, dataset and training budget, a benefit could not
-be shown, and that a single-seed study would have reported one effect or its opposite
-depending on the seed.
+within about two points, most of them slightly positive. We do not conclude that size
+weighting or boundary supervision cannot help. We conclude that, for this model, dataset and
+15-epoch regime, no reliable benefit could be shown, that any benefit on test is small, and
+that a single-seed study would have reported one effect or its opposite depending on the
+seed. A longer or augmented regime in which the models find more of the small regions could
+give a different answer.
 
 \paragraph{What is not established.} We do not know why one event per split triggers
-over-prediction in the smallest model family. We tested and rejected one explanation, flood
-fraction. We also do not know why BIT-SAR~v2 is robust. It differs from the other models in
+over-prediction in the smallest model family. We tested and rejected one explanation, flood fraction; calibration at a fixed threshold is a
+second one that our metrics cannot test. We also do not know why BIT-SAR~v2 is robust. It differs from the other models in
 architecture, initialization and loss coefficients at once, so its advantage cannot be
 attributed to any one of them. Separating these factors is a natural next study.
 
@@ -560,10 +664,13 @@ a 2--7\% small-region recall; (v) report several cost indicators on more than on
 and (vi) write the comparison rule down before looking, and say when it was written.
 
 \paragraph{Limitations.} The study uses one dataset, three validation events and three test
-events, and three seeds per recipe; the sign rules are conventions, not statistical tests.
+events, and three seeds per recipe; the sign rules are conventions, not statistical tests, and they
+are strict enough that small consistent effects would be labelled inconsistent. Test
+evidence on small regions comes mainly from one event. The training regime is short and
+unaugmented, the decision threshold is fixed, and the model families were not tuned equally.
 Inputs are intensity only, although coherence is known to help in urban
-areas~\cite{li2019urbanflood}. Evaluation is patch-level, training lasts 15 epochs without
-augmentation, and the split is our own. The recipe was tuned for one variant only. The sign
+areas~\cite{li2019urbanflood}. Evaluation is patch-level, the two flood classes are merged, and the split is our own, so
+no comparison with published numbers is possible. The sign
 rules were written after a discovery seed, and one stability rule had the loophole described
 in Sect.~\ref{sec:recipe}. Cost was measured on a shared server and not on edge hardware, and
 the FLOP counter ignores normalization, activation and attention-softmax operations. Our
@@ -572,10 +679,11 @@ literature search was bounded.
 \section{Conclusion}
 
 We set out to improve the detection of small urban floods in SAR imagery with a lightweight
-model, and instead documented three things. First, neither a size-weighted loss nor a
-boundary package had a consistent effect across six seeds, two recipes and a sealed test
-set, and all models recovered only a few percent of interior small floods. Second, rankings
-between model families were stable while rankings among close variants were not, with the
+model, and instead documented three things. First, under a 15-epoch regime, neither a size-weighted loss nor a boundary package showed a
+reliable effect across six seeds, two recipes and a sealed test set; any effect on test was
+at most about two points, and all models recovered only a few percent of small flooded
+regions. Second, rankings between model families, compared as whole methods, were stable while
+rankings among close variants were not, with the
 variation concentrated in one event per split for reasons that flood fraction does not
 explain. Third, parameters, FLOPs, GPU latency and CPU latency ordered the models
 differently, so ``lightweight'' needs a device and an indicator attached to it.
@@ -583,6 +691,13 @@ differently, so ``lightweight'' needs a device and an indicator attached to it.
 The open questions are specific: what makes the BIT-based model robust, whether the findings
 hold on a second SAR flood dataset, whether coherence changes the picture for urban floods,
 and what the models cost on an actual edge device.
+
+% TODO(authors): confirm the availability sentence below (no repository link is given, by the
+% authors' decision of 2026-10-10).
+\paragraph{Data and code availability.} UrbanSARFloods is publicly available from its
+authors~\cite{zhao2024urbansarfloods}. The training and evaluation code, the written
+protocols and the per-run result records of this study are available from the corresponding
+author on reasonable request.
 
 % TODO(authors): acknowledgments and funding.
 \begin{credits}
@@ -596,8 +711,7 @@ relevant to the content of this article.
 % TODO(authors): confirm.
 \end{credits}
 
-% TODO(authors): data and code availability. UrbanSARFloods is public. Add the repository URL
-% here if the submission is not anonymous.
+
 
 \bibliographystyle{splncs04}
 \bibliography{refs}
