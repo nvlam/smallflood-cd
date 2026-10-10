@@ -54,6 +54,7 @@ CPU_TIMING = {'warmup': 20, 'timed': 100, 'repetitions': 3}
 THROUGHPUT = {'batch': 8, 'warmup': 20, 'timed': 100, 'repetitions': 3}
 CPU_THREADS = (1, 4)
 GPU_WAIT_MINUTES = 30
+IDLE_MEMORY_MIB, IDLE_UTILIZATION, IDLE_SAMPLES = 1024, 1, 5  # amendment 1
 SIZE_BUDGET_MB = 20.0
 ONNX_PATCHES = 64
 METRICS = ('event_macro_f1', 'f1', 'object_global_component_f1',
@@ -159,21 +160,47 @@ def summarize_latency(repetitions):
 
 
 def other_gpu_processes(output, own_pid):
-    return [int(x) for x in output.split() if x.strip().isdigit() and int(x) != own_pid]
+    """{pid: MiB} of other compute processes from `pid, used_memory` CSV lines."""
+    others = {}
+    for line in output.splitlines():
+        parts = [x.strip() for x in line.split(',')]
+        if len(parts) == 2 and parts[0].isdigit() and int(parts[0]) != own_pid:
+            others[int(parts[0])] = int(parts[1].split()[0])
+    return others
+
+
+def gpu_free_enough(others, utilization):
+    """Amendment 1: idle co-tenants are tolerated (<= 1024 MiB in total, utilization <= 1%)."""
+    if not others:
+        return True
+    return sum(others.values()) <= IDLE_MEMORY_MIB and len(utilization) == IDLE_SAMPLES \
+        and all(u <= IDLE_UTILIZATION for u in utilization)
+
+
+def nvidia_query(*fields, kind='gpu'):
+    return subprocess.run(['nvidia-smi', f'--query-{kind}={",".join(fields)}', '--format=csv,noheader,nounits'],
+                          capture_output=True, text=True, check=True).stdout
 
 
 def wait_for_free_gpu(log):
-    """Protocol section 6: no other compute process; wait up to 30 minutes, then stop."""
+    """Protocol section 6 with amendment 1; wait up to 30 minutes, then stop."""
     for minute in range(GPU_WAIT_MINUTES + 1):
-        out = subprocess.run(['nvidia-smi', '--query-compute-apps=pid', '--format=csv,noheader'],
-                             capture_output=True, text=True, check=True).stdout
-        others = other_gpu_processes(out, os.getpid())
-        log.append({'time': time.time(), 'other_gpu_pids': others, 'loadavg': os.getloadavg()})
-        if not others:
-            return
-        print(f'GPU busy (pids {others}); waiting, minute {minute}', flush=True)
+        torch.cuda.synchronize()
+        others = other_gpu_processes(nvidia_query('pid', 'used_memory', kind='compute-apps'), os.getpid())
+        utilization = []
+        if others:
+            time.sleep(2)  # let this process's own activity leave the utilization window
+            for _ in range(IDLE_SAMPLES):
+                utilization.append(int(nvidia_query('utilization.gpu').split()[0]))
+                time.sleep(1)
+        ok = gpu_free_enough(others, utilization)
+        log.append({'time': time.time(), 'other_gpu_processes_mib': others, 'utilization_samples': utilization,
+                    'accepted': ok, 'loadavg': os.getloadavg()})
+        if ok:
+            return bool(others)
+        print(f'GPU busy ({others}, utilization {utilization}); waiting, minute {minute}', flush=True)
         time.sleep(60)
-    raise RuntimeError('GPU still shared after 30 minutes; stop and report')
+    raise RuntimeError('GPU still busy after 30 minutes; stop and report')
 
 
 @torch.inference_mode()
@@ -181,9 +208,9 @@ def gpu_latency(model, half, log):
     device = torch.device('cuda')
     model = require_eval(model.half() if half else model.float()).to(device)
     pre, post = example(1, device, half)
-    repetitions = []
+    repetitions, flags = [], []
     for _ in range(GPU_TIMING['repetitions']):
-        wait_for_free_gpu(log)
+        shared = wait_for_free_gpu(log)
         for _ in range(GPU_TIMING['warmup']):
             model(pre, post)
         torch.cuda.synchronize()
@@ -198,7 +225,8 @@ def gpu_latency(model, half, log):
         if not torch.isfinite(out).all():
             raise RuntimeError('Nonfinite output')
         repetitions.append(values)
-    return repetitions
+        flags.append(shared)
+    return repetitions, flags
 
 
 @torch.inference_mode()
@@ -295,13 +323,14 @@ def measure(root):
         for precision in ('fp32', 'fp16'):
             half = precision == 'fp16'
             fresh, _ = load_model(name)
-            raw = gpu_latency(fresh, half, load_log)
+            raw, shared = gpu_latency(fresh, half, load_log)
             rpv_dump(root/'latency_raw'/f'{name}_gpu_{precision}.json', raw)
             rates = gpu_throughput(fresh, half, load_log)
             rows.append({**base, 'device': 'gpu', 'backend': 'pytorch', 'precision': precision, 'threads': '',
                          **summarize_latency(raw), **gpu_memory(fresh, half),
                          'throughput_batch8_pairs_per_s': statistics.median(rates),
-                         'throughput_repetitions': rates})
+                         'throughput_repetitions': rates,
+                         'idle_other_gpu_process_present': any(shared)})
             del fresh
             torch.cuda.empty_cache()
             print(f'MEASURED {name} gpu {precision}', flush=True)
@@ -311,7 +340,8 @@ def measure(root):
             rows.append({**base, 'device': 'cpu', 'backend': 'onnxruntime', 'precision': 'fp32',
                          'threads': threads, **summarize_latency(raw), 'peak_allocated_bytes': '',
                          'parameter_bytes': '', 'peak_minus_parameters_bytes': '',
-                         'throughput_batch8_pairs_per_s': '', 'throughput_repetitions': ''})
+                         'throughput_batch8_pairs_per_s': '', 'throughput_repetitions': '',
+                         'idle_other_gpu_process_present': ''})
             print(f'MEASURED {name} cpu {threads} thread(s)', flush=True)
         rpv_dump(root/'onnx'/f'{name}.sha256.json', {'sha256': sha256(onnx_path), 'run': str(directory)})
     (root/'tmp').rmdir()

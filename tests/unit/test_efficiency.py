@@ -60,8 +60,14 @@ def test_latency_summary_and_gpu_process_filter(eff):
     s = eff.summarize_latency([[1, 2, 3, 4, 100], [2, 2, 2, 2, 2], [5, 5, 5, 5, 5]])
     assert s['repetition_medians_ms'] == [3, 2, 5] and s['median_ms'] == 3
     assert s['p90_ms'] == pytest.approx(5.0)
-    assert eff.other_gpu_processes('123\n456\n', 123) == [456]
-    assert eff.other_gpu_processes('\n', 1) == []
+    assert eff.other_gpu_processes('123, 266\n456, 600\n', 123) == {456: 600}
+    assert eff.other_gpu_processes('\n', 1) == {}
+    # Amendment 1: idle co-tenants tolerated up to 1024 MiB at <= 1% utilization.
+    assert eff.gpu_free_enough({}, [])
+    assert eff.gpu_free_enough({456: 600}, [0, 0, 1, 0, 0])
+    assert not eff.gpu_free_enough({456: 600}, [0, 0, 2, 0, 0])
+    assert not eff.gpu_free_enough({456: 600, 7: 500}, [0, 0, 0, 0, 0])
+    assert not eff.gpu_free_enough({456: 600}, [0, 0])
 
 
 def test_agreement_and_metrics_from_predictions(eff):

@@ -123,3 +123,21 @@ Engineering: about 1 day. Storage: small (raw timings, ONNX files of a few MB).
    checkpoints; reported without pass/fail thresholds.
 6. **Load handling:** GPU must be free of other compute processes; CPU load recorded, not
    controlled.
+
+## 11. Amendment 1 (approved 2026-10-10, before any timing was recorded)
+
+**Reason.** The first measurement attempt (2026-10-10T10:56Z) stopped under §6 after 30
+minutes: another user's idle Jupyter kernel held about 600 MiB on the GPU at 0% utilization.
+Such kernels can stay for days. No latency, throughput or memory value had been recorded.
+The user approved relaxing the rule ("Duyệt cách 3, nới quy tắc và chạy đo").
+
+**Amended §6 GPU rule.** Before each GPU repetition:
+- if no other compute process is present, proceed (unchanged);
+- if other compute processes are present, proceed **only if** their total GPU memory is at
+  most 1,024 MiB **and** five GPU-utilization samples taken one second apart, with this
+  process idle, are all at most 1%;
+- otherwise wait as before (checks every minute, stop after 30 minutes).
+
+Every repetition records the other processes, their memory and the utilization samples, and
+the cost table marks rows measured while an idle process was present. Everything else in the
+protocol is unchanged. Timings are never re-run to obtain better values.
