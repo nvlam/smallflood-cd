@@ -68,8 +68,8 @@ standard approach for open-area flooding. Urban flooding is harder: buildings pr
 radar returns that depend on geometry, flooded streets are narrow, and the flooded regions
 are often only a few pixels wide. The authors of UrbanSARFloods report that common training
 choices struggle with this imbalance and that urban flood detection remains
-challenging~\cite{zhao2024urbansarfloods}; earlier work found that interferometric coherence
-helps in built-up areas~\cite{li2019urbanflood}.
+challenging~\cite{zhao2024urbansarfloods}; earlier work combined intensity with interferometric coherence to map urban
+floods~\cite{li2019urbanflood}.
 
 \begin{figure}[t]
 \centering
@@ -130,24 +130,24 @@ areas~\cite{zhao2024urbansarfloods}. We use its intensity channels only.
 is a change-detection problem. Fully convolutional Siamese networks~\cite{daudt2018fcsiam}
 and transformer-based models such as the Bitemporal Image Transformer
 (BIT)~\cite{chen2022bit} are common starting points, and
-Siamese designs with attention have been applied to SAR flood
+Siamese and transformer-based designs have been applied to SAR flood
 pairs~\cite{saleh2024damnet,saleh2024token}. Two recent studies caution that architectural
 novelty explains less than it appears to: a plain U-Net remains a top performer on standard
 optical benchmarks~\cite{corley2024realitycheck}, and a broad benchmark finds Siamese U-Nets
 competitive once efficiency is counted~\cite{tomanic2026benchmark}.
 
 \paragraph{Small regions and boundaries.} The Tversky loss trades false positives against
-false negatives~\cite{salehi2017tversky}. Instance-aware losses weight each connected
-component rather than each pixel~\cite{kofler2022blobloss,rachmadi2024ici}, and boundary
+false negatives~\cite{salehi2017tversky}. Instance-aware losses target the detection of individual, often small,
+instances that pixel-level losses can overlook~\cite{kofler2022blobloss,rachmadi2024ici}, and boundary
 losses address highly unbalanced segmentation~\cite{kervadec2019boundary}. These ideas were
 developed mainly for medical images; small changed regions have also been studied in optical
-remote sensing~\cite{cao2020small}. Evaluation guidelines recommend object-level metrics when
-objects of very different sizes matter~\cite{maierhein2024metrics}.
+remote sensing~\cite{cao2020small}. Validation guidelines recommend choosing metrics from the problem at hand, including
+object-level validation where individual objects are of interest~\cite{maierhein2024metrics}.
 
 \paragraph{Efficiency.} Lightweight change detectors report strong accuracy with few
 parameters~\cite{codegoni2022tinycd}, including for SAR flood
-mapping~\cite{kacmaz2026lightweight}, and flood segmentation has been developed for use on board small
-satellites~\cite{mateogarcia2021onboard}. Dehghani et al.\ show that cost indicators such as
+mapping~\cite{kacmaz2026lightweight}, and flood segmentation from optical imagery has been demonstrated for on-board
+processing on a small satellite~\cite{mateogarcia2021onboard}. Dehghani et al.\ show that cost indicators such as
 parameters, FLOPs and speed can disagree and argue for reporting several of
 them~\cite{dehghani2022efficiency}.
 
@@ -668,8 +668,8 @@ events, and three seeds per recipe; the sign rules are conventions, not statisti
 are strict enough that small consistent effects would be labelled inconsistent. Test
 evidence on small regions comes mainly from one event. The training regime is short and
 unaugmented, the decision threshold is fixed, and the model families were not tuned equally.
-Inputs are intensity only, although coherence is known to help in urban
-areas~\cite{li2019urbanflood}. Evaluation is patch-level, the two flood classes are merged, and the split is our own, so
+Inputs are intensity only, although coherence has been used for urban
+floods~\cite{li2019urbanflood}. Evaluation is patch-level, the two flood classes are merged, and the split is our own, so
 no comparison with published numbers is possible. The sign
 rules were written after a discovery seed, and one stability rule had the loophole described
 in Sect.~\ref{sec:recipe}. Cost was measured on a shared server and not on edge hardware, and
