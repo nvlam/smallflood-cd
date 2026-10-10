@@ -103,10 +103,14 @@ def example(batch, device='cpu', half=False):
 
 def count_flops(model):
     from torch.utils.flop_counter import FlopCounterMode
-    pre, post = example(1)
-    with torch.inference_mode(), FlopCounterMode(display=False) as counter:
-        model(pre, post)
+    # FlopCounterMode counts nothing under inference_mode on torch 2.5; use no_grad instead.
+    with torch.inference_mode(False), torch.no_grad():
+        pre, post = example(1)
+        with FlopCounterMode(display=False) as counter:
+            model(pre, post)
     flops = int(counter.get_total_flops())
+    if flops <= 0:
+        raise RuntimeError('FLOP counter returned zero')
     return {'flops': flops, 'macs': flops // 2,
             'flop_scope': 'convolutions and matrix multiplications only (FlopCounterMode)'}
 

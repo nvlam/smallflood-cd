@@ -42,6 +42,8 @@ def test_architecture_table_matches_protocol(eff):
 def test_flops_sizes_and_parameter_bytes(eff, tmp_path):
     model = tiny()
     counted = eff.count_flops(model)
+    with torch.inference_mode():  # the smoke stage calls it inside inference_mode
+        assert eff.count_flops(model) == counted
     assert counted['flops'] > 0 and counted['macs'] == counted['flops'] // 2
     assert 'convolutions' in counted['flop_scope']
     sizes = eff.serialized_sizes(model, tmp_path/'s', 'tiny')
