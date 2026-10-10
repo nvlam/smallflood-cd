@@ -463,19 +463,19 @@ def fidelity(root):
     print(f'EFFICIENCY FIDELITY COMPLETE: {root}', flush=True)
 
 
-@torch.inference_mode()
 def smoke(root):
-    """Engineering check, no timing kept: ONNX export, one ORT run and one FP16 forward each."""
+    """Engineering check, no timing kept: FLOPs, ONNX export, one ORT run and one FP16 forward."""
     root.mkdir(parents=True, exist_ok=False)
     for name in ARCHITECTURES:
         model, _ = load_model(name)
+        flops = count_flops(model)['flops']
         path = export_onnx(model, root/f'{name}.onnx')
-        pre, post = example(1)
-        reference = model(pre, post).change_logits.numpy()
-        out = onnx_session(path, 1).run(None, {'pre': pre.numpy(), 'post': post.numpy()})[0]
-        half = model.half().cuda()(*example(1, 'cuda', True)).change_logits.float().cpu().numpy()
-        print(f'SMOKE {name}: flops={count_flops(model.float().cpu())["flops"]} '
-              f'onnx_max_diff={float(np.abs(out - reference).max()):.2e} '
+        with torch.inference_mode():
+            pre, post = example(1)
+            reference = model(pre, post).change_logits.numpy()
+            out = onnx_session(path, 1).run(None, {'pre': pre.numpy(), 'post': post.numpy()})[0]
+            half = model.half().cuda()(*example(1, 'cuda', True)).change_logits.float().cpu().numpy()
+        print(f'SMOKE {name}: flops={flops} onnx_max_diff={float(np.abs(out - reference).max()):.2e} '
               f'fp16_max_diff={float(np.abs(half - reference).max()):.2e}', flush=True)
     print(f'EFFICIENCY SMOKE PASSED: {root}', flush=True)
 
