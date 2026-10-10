@@ -84,6 +84,20 @@ def load_model(architecture):
     return model, directory
 
 
+def export_eval(model, path):
+    """export_onnx leaves the wrapped model in training mode (torch.onnx restores the fresh
+    wrapper's default mode); the exported graph itself is in eval mode. Restore eval here."""
+    path = export_onnx(model, path)
+    model.eval()
+    return path
+
+
+def require_eval(model):
+    if model.training or any(m.training for m in model.modules()):
+        raise RuntimeError('Model is in training mode; refuse to measure')
+    return model
+
+
 def inference_settings():
     """Timing uses inference settings, not the training determinism settings."""
     torch.use_deterministic_algorithms(False)
@@ -165,7 +179,7 @@ def wait_for_free_gpu(log):
 @torch.inference_mode()
 def gpu_latency(model, half, log):
     device = torch.device('cuda')
-    model = (model.half() if half else model.float()).to(device)
+    model = require_eval(model.half() if half else model.float()).to(device)
     pre, post = example(1, device, half)
     repetitions = []
     for _ in range(GPU_TIMING['repetitions']):
@@ -190,7 +204,7 @@ def gpu_latency(model, half, log):
 @torch.inference_mode()
 def gpu_memory(model, half):
     device = torch.device('cuda')
-    model = (model.half() if half else model.float()).to(device)
+    model = require_eval(model.half() if half else model.float()).to(device)
     pre, post = example(1, device, half)
     model(pre, post)
     torch.cuda.synchronize()
@@ -205,7 +219,7 @@ def gpu_memory(model, half):
 @torch.inference_mode()
 def gpu_throughput(model, half, log):
     device = torch.device('cuda')
-    model = (model.half() if half else model.float()).to(device)
+    model = require_eval(model.half() if half else model.float()).to(device)
     pre, post = example(THROUGHPUT['batch'], device, half)
     rates = []
     for _ in range(THROUGHPUT['repetitions']):
@@ -274,7 +288,7 @@ def measure(root):
         model, directory = load_model(name)
         base = {'architecture': name, 'arms': arms, 'parameters': parameters, **count_flops(model),
                 **serialized_sizes(model, root/'tmp', name)}
-        onnx_path = export_onnx(model, root/'onnx'/f'{name}.onnx')
+        onnx_path = export_eval(model, root/'onnx'/f'{name}.onnx')
         base['onnx_fp32_bytes'] = onnx_path.stat().st_size
         base['fits_20mb_budget_fp32'] = base['state_dict_fp32_bytes']/1e6 <= SIZE_BUDGET_MB
         base['fits_20mb_budget_fp16'] = base['state_dict_fp16_bytes']/1e6 <= SIZE_BUDGET_MB
@@ -372,7 +386,7 @@ def agreement(a, b, valid):
 def fp16_agreement(architecture):
     model32, directory = load_model(architecture)
     model16, _ = load_model(architecture)
-    model32, model16 = model32.cuda(), model16.half().cuda()
+    model32, model16 = require_eval(model32).cuda(), require_eval(model16).half().cuda()
     _, loader, _ = validation_dataset(directory)
     same = total = 0
     worst = 0.0
@@ -408,7 +422,7 @@ def metrics_from_predictions(predictions, targets, valids, events, small_thresho
 @torch.inference_mode()
 def onnx_agreement(architecture, onnx_path):
     model, directory = load_model(architecture)
-    model = model.cuda()
+    model = require_eval(model).cuda()
     dataset, _, small = validation_dataset(directory)
     session = onnx_session(onnx_path, 4)
     same = total = 0
@@ -469,7 +483,7 @@ def smoke(root):
     for name in ARCHITECTURES:
         model, _ = load_model(name)
         flops = count_flops(model)['flops']
-        path = export_onnx(model, root/f'{name}.onnx')
+        path = export_eval(model, root/f'{name}.onnx')
         with torch.inference_mode():
             pre, post = example(1)
             reference = model(pre, post).change_logits.numpy()

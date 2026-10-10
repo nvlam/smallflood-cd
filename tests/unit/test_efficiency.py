@@ -150,3 +150,18 @@ def test_complete_requires_all_outputs(eff, tmp_path):
     (tmp_path/'fidelity.json').write_text(json.dumps({'architectures': {}, 'test_used': False}))
     with pytest.raises(RuntimeError, match='Incomplete'):
         eff.complete(tmp_path)
+
+
+def test_export_restores_eval_and_training_models_are_refused(eff, tmp_path):
+    pytest.importorskip('onnx')  # present on the server; the local venv has no onnx
+    model = tiny()
+    eff.require_eval(model)
+    pre, post = eff.example(1)
+    with torch.no_grad():
+        before = model(pre, post).change_logits.clone()
+    eff.export_eval(model, tmp_path/'tiny.onnx')
+    assert not model.training and not any(m.training for m in model.modules())
+    with torch.no_grad():
+        assert torch.equal(model(pre, post).change_logits, before)
+    with pytest.raises(RuntimeError, match='training mode'):
+        eff.require_eval(model.train())
